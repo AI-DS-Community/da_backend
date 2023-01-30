@@ -64,50 +64,7 @@ router.post("/confirm_reg", async (ctx, _next) => {
     logger.info(
       `Attempt at ${Date.now()} using ${JSON.stringify(data)} for REG`,
     );
-
-    const passes = data.all_passes.split(";");
-    const members = data.team_members.split(";");
-
-    if (passes.length > members.length) {
-      ctx.response.status = 200;
-      ctx.response.body = {
-        message:
-          `Registration Unsuccessful! Passes do not match the team members listed.`,
-      };
-      return;
-    }
-
-    for (const pass of passes) {
-      const name = verifyPass.get(pass);
-      if (!name) {
-        ctx.response.status = 200;
-        ctx.response.body = {
-          message: `Registration Unsuccessful! Pass ${pass} does not exist.`,
-        };
-        return;
-      } else if (!members.includes(name.name as string)) {
-        ctx.response.status = 200;
-        ctx.response.body = {
-          message:
-            `Registration Unsuccessful! Pass ${pass} does not belong to any of the listed members.`,
-        };
-        return;
-      } 
-    }
-
-    for (const row of getAllRegistrations.all(data.event_name)) {
-      const usedPasses = ((row.all_passes || "") as string).split(";");
-      if(usedPasses.some(x => passes.includes(x))) {
-        ctx.response.status = 200;
-        ctx.response.body = {
-          message:
-            `Registration Unsuccessful! One of the passes has already been used for registering in this event.`,
-        };
-        return;
-      }
-    }
-
-    
+   
 
     const ref_id = create(SCARDS_EPOCH);
 
