@@ -2,6 +2,6 @@
   "imports": {
     "oak": "https://deno.land/x/oak@v11.1.0/mod.ts",
     "oakCors": "https://deno.land/x/cors@v1.2.2/oakCors.ts",
-    "sqlite3": "https://deno.land/x/sqlite3@0.7.2/mod.ts"
+    "sqlite3": "https://deno.land/x/sqlite3@0.7.3/mod.ts"
   }
 }

@@ -1,4 +1,4 @@
-import { handlers, Logger } from "https://deno.land/std@0.172.0/log/mod.ts";
+import { handlers, Logger } from "https://deno.land/std@0.175.0/log/mod.ts";
 
 const file_reg = new handlers.FileHandler("INFO", {
   filename: "./reg_log",
@@ -16,5 +16,7 @@ file_err.setup();
 const logger = new Logger("registration", "INFO", {
   handlers: [file_err, file_reg],
 });
+
+logger.info("aaa")
 
 export { logger };

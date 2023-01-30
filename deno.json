@@ -1,6 +1,7 @@
 {
     "importMap": "./import_map.json",
     "tasks": {
-        "start": "deno run -A --unstable serve.ts"
+        "start": "deno run -A --unstable serve.ts",
+        "init": "deno run -A --unstable init.ts"
     }
 }
