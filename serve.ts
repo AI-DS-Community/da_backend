@@ -158,7 +158,7 @@ router.post("/confirm_reg", async (ctx, _next) => {
       }
     }
 
-    const last: number = getTeamLength.get()?.count as number || 0;
+    const last: number = getTeamLength.get()?.["count(reference_id)"] as number || 0;
     const ref_id = `${(10000 + last)}${formatCount()}`;
 
     addTeam.run(
@@ -200,7 +200,7 @@ router.post("/all_pass", async (ctx, _next) => {
     logger.info(
       `Attempt at ${Date.now()} using ${JSON.stringify(data)} for PASS`,
     );
-    const last: number = getAllRegistrations.get()?.count as number || 0;
+    const last: number = getAllRegistrations.get()?.["count(reference_id)"] as number || 0;
     const ref_id = `${(10000 + last)}${formatCount()}`;
 
     addPass.run(
