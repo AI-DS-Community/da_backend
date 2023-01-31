@@ -11,7 +11,25 @@ const SCARDS_EPOCH = 1667759400000;
 
 //console.log(new Array(9).fill(0).map((x) => create(SCARDS_EPOCH)));
 
+const AddZero = (s: string | number, n: number) =>
+  s.toString().padStart(n, "0");
+const counter = new Uint8Array(1);
+counter[0] = 0;
+function formatCount(): string {
+  if (Atomics.load(counter, 0) === 999) Atomics.store(counter, 0, 0);
+  Atomics.add(counter, 0, 1);
+  return AddZero(Atomics.load(counter, 0), 3);
+}
+
 const db = new Database("db.scards");
+
+const getTeamLength = db.prepare(
+  `SELECT count(reference_id) FROM teams`,
+);
+
+const getPassLength = db.prepare(
+  `SELECT count(reference_id) FROM all_pass`,
+);
 
 const addTeam = db.prepare(
   `INSERT INTO teams (
@@ -109,7 +127,8 @@ router.post("/confirm_reg", async (ctx, _next) => {
       }
     }
 
-    const ref_id = create(SCARDS_EPOCH);
+    const last: number = getTeamLength.get()?.count as number || 0;
+    const ref_id = `${(10000 + last)}${formatCount()}`;
 
     addTeam.run(
       data.team_name,
@@ -150,7 +169,8 @@ router.post("/all_pass", async (ctx, _next) => {
     logger.info(
       `Attempt at ${Date.now()} using ${JSON.stringify(data)} for PASS`,
     );
-    const ref_id = create(SCARDS_EPOCH);
+    const last: number = getAllRegistrations.get()?.count as number || 0;
+    const ref_id = `${(10000 + last)}${formatCount()}`;
 
     addPass.run(
       data.name,
