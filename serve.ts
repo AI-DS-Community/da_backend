@@ -190,7 +190,7 @@ router.post("/confirm_reg", async (ctx, _next) => {
       res += `\nAGREED TO TERMS: ${data.agree_to_terms}`;
       embed.setDescription(res);
       const embedbody = { embeds: [embed.toJSON()] };
-      fetch(String(HOOK_PASS), {
+      fetch(String(HOOK_REG), {
         method: "post",
         body: JSON.stringify(embedbody),
         headers: { "Content-Type": "application/json" },
