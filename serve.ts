@@ -37,6 +37,13 @@ const getPassLength = db.prepare(
   `SELECT count(reference_id) FROM all_pass`,
 );
 
+const setPaidPass = db.prepare(
+  `UPDATE all_pass SET paid = ? WHERE reference_id = ?`,
+);
+const setPaidReg = db.prepare(
+  `UPDATE teams SET paid = ? WHERE reference_id = ?`,
+);
+
 const addTeam = db.prepare(
   `INSERT INTO teams (
     team_name, 
@@ -222,7 +229,7 @@ router.post("/all_pass", async (ctx, _next) => {
       `Attempt at ${Date.now()} using ${JSON.stringify(data)} for PASS`,
     );
     const last: number =
-      getAllRegistrations.get()?.["count(reference_id)"] as number || 0;
+    getPassLength.get()?.["count(reference_id)"] as number || 0;
     const ref_id = `${(10000 + last)}${formatCount()}`;
 
     addPass.run(
@@ -288,6 +295,8 @@ const client = new Client({
 
 const GET_COMMAND = /^get\s(P|R)-(\d+)/i;
 
+const SET_COMMAND = /^set\s(P|R)-(\d+)\s(paid|unpaid)/i;
+
 client.on("messageCreate", (message) => {
   if (message.channelID !== "1069859960428707954") return;
   if (GET_COMMAND.exec(message.content)) {
@@ -315,6 +324,15 @@ client.on("messageCreate", (message) => {
         e.setDescription(res);
         message.channel.send({ embeds: [e] });
       }
+    }
+  }
+  if (SET_COMMAND.exec(message.content)) {
+    const args = SET_COMMAND.exec(message.content);
+    if (args) {
+      const data = args[1].toLowerCase() === "p"
+        ? setPaidPass.run(args[3], args[2].toLowerCase() === "paid" ? 1 : 0)
+        : setPaidReg.run(args[3], args[2].toLowerCase() === "paid" ? 1 : 0)
+      message.channel.send("Done")      
     }
   }
 });
