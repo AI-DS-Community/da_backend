@@ -12,6 +12,8 @@ import {
 } from "https://deno.land/x/harmony@v2.8.0/mod.ts";
 
 const SCARDS_EPOCH = 1667759400000;
+const HOOK_REG = Deno.env.get("REGISTRATIONS");
+const HOOK_PASS = Deno.env.get("PASSES");
 
 //console.log(new Array(9).fill(0).map((x) => create(SCARDS_EPOCH)));
 
@@ -158,7 +160,8 @@ router.post("/confirm_reg", async (ctx, _next) => {
       }
     }
 
-    const last: number = getTeamLength.get()?.["count(reference_id)"] as number || 0;
+    const last: number =
+      getTeamLength.get()?.["count(reference_id)"] as number || 0;
     const ref_id = `${(10000 + last)}${formatCount()}`;
 
     addTeam.run(
@@ -175,6 +178,23 @@ router.post("/confirm_reg", async (ctx, _next) => {
     );
 
     if (data) {
+      const embed = new Embed().setColor("#c39232");
+      let res = `\nREF: ${ref_id}`;
+      res += `\nTEAM: ${data.team_name}`;
+      res += `\nPASSES: ${data.all_passes}`;
+      res += `\nEVENT: ${data.event_name}`;
+      res += `\nCONTACT: ${data.contact_number}`;
+      res += `\nEMAIL: ${data.email_id}`;
+      res += `\nINSTITUTION: ${data.institution_name}`;
+      res += `\nDEGREE: ${data.degree_and_branch}`;
+      res += `\nAGREED TO TERMS: ${data.agree_to_terms}`;
+      embed.setDescription(res);
+      const embedbody = { embeds: [embed.toJSON()] };
+      fetch(String(HOOK_PASS), {
+        method: "post",
+        body: JSON.stringify(embedbody),
+        headers: { "Content-Type": "application/json" },
+      });
       ctx.response.status = 200;
       ctx.response.body = {
         message: "Reservation Success!",
@@ -200,7 +220,8 @@ router.post("/all_pass", async (ctx, _next) => {
     logger.info(
       `Attempt at ${Date.now()} using ${JSON.stringify(data)} for PASS`,
     );
-    const last: number = getAllRegistrations.get()?.["count(reference_id)"] as number || 0;
+    const last: number =
+      getAllRegistrations.get()?.["count(reference_id)"] as number || 0;
     const ref_id = `${(10000 + last)}${formatCount()}`;
 
     addPass.run(
@@ -214,6 +235,22 @@ router.post("/all_pass", async (ctx, _next) => {
     );
 
     if (data) {
+      const embed = new Embed().setColor("#c39232");
+      let res = `\nREF: ${ref_id}`;
+      res += `\nNAME: ${data.name}`;
+      res += `\nCONTACT: ${data.contact_number}`;
+      res += `\nEMAIL: ${data.email_id}`;
+      res += `\nINSTITUTION: ${data.institution_name}`;
+      res += `\nDEGREE: ${data.degree_and_branch}`;
+      res += `\nAGREED TO TERMS: ${data.agree_to_terms}`;
+      embed.setDescription(res);
+      const embedbody = { embeds: [embed.toJSON()] };
+      fetch(String(HOOK_PASS), {
+        method: "post",
+        body: JSON.stringify(embedbody),
+        headers: { "Content-Type": "application/json" },
+      });
+
       ctx.response.status = 200;
       ctx.response.body = {
         message: "Reservation Success!",
