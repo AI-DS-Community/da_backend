@@ -179,15 +179,16 @@ router.post("/confirm_reg", async (ctx, _next) => {
 
     if (data) {
       const embed = new Embed().setColor("#c39232");
-      let res = `\nREF: ${ref_id}`;
-      res += `\nTEAM: ${data.team_name}`;
-      res += `\nPASSES: ${data.all_passes}`;
-      res += `\nEVENT: ${data.event_name}`;
-      res += `\nCONTACT: ${data.contact_number}`;
-      res += `\nEMAIL: ${data.email_id}`;
-      res += `\nINSTITUTION: ${data.institution_name}`;
-      res += `\nDEGREE: ${data.degree_and_branch}`;
-      res += `\nAGREED TO TERMS: ${data.agree_to_terms}`;
+      let res = `\n**REF**: ${ref_id}`;
+      res += `\n**TEAM**: ${data.team_name}`;
+      res += `\n**PASSES**: ${data.all_passes}`;
+      res += `\n**MEMBERS**: ${data.team_members}`;
+      res += `\n**EVENT**: ${data.event_name}`;
+      res += `\n**CONTACT**: ${data.contact_number}`;
+      res += `\n**EMAIL**: ${data.email_id}`;
+      res += `\n**INSTITUTION**: ${data.institution_name}`;
+      res += `\n**DEGREE**: ${data.degree_and_branch}`;
+      res += `\n**AGREED TO TERMS**: ${data.agree_to_terms}`;
       embed.setDescription(res);
       const embedbody = { embeds: [embed.toJSON()] };
       fetch(String(HOOK_REG), {
@@ -236,13 +237,13 @@ router.post("/all_pass", async (ctx, _next) => {
 
     if (data) {
       const embed = new Embed().setColor("#c39232");
-      let res = `\nREF: ${ref_id}`;
-      res += `\nNAME: ${data.name}`;
-      res += `\nCONTACT: ${data.contact_number}`;
-      res += `\nEMAIL: ${data.email_id}`;
-      res += `\nINSTITUTION: ${data.institution_name}`;
-      res += `\nDEGREE: ${data.degree_and_branch}`;
-      res += `\nAGREED TO TERMS: ${data.agree_to_terms}`;
+      let res = `\n**REF**: ${ref_id}`;
+      res += `\n**NAME**: ${data.name}`;
+      res += `\n**CONTACT**: ${data.contact_number}`;
+      res += `\n**EMAIL**: ${data.email_id}`;
+      res += `\n**INSTITUTION**: ${data.institution_name}`;
+      res += `\n**DEGREE**: ${data.degree_and_branch}`;
+      res += `\n**AGREED TO TERMS**: ${data.agree_to_terms}`;
       embed.setDescription(res);
       const embedbody = { embeds: [embed.toJSON()] };
       fetch(String(HOOK_PASS), {
