@@ -21,7 +21,7 @@ import { stringify } from "https://deno.land/std@0.176.0/encoding/csv.ts";
 //console.log(new Array(9).fill(0).map((x) => create(SCARDS_EPOCH)));
 
 const columns = {
-  passes: [
+  teams: [
     "reg_number",
     "team_name",
     "event_name",
@@ -35,7 +35,7 @@ const columns = {
     "reference_id",
     "paid",
   ],
-  teams: [
+  passes: [
     "reg_number",
     "name",
     "contact_number",
