@@ -9,13 +9,44 @@ import {
   Client,
   Embed,
   GatewayIntents,
+  MessageAttachment
 } from "https://deno.land/x/harmony@v2.8.0/mod.ts";
 
 const SCARDS_EPOCH = 1667759400000;
 const HOOK_REG = Deno.env.get("REGISTRATIONS");
 const HOOK_PASS = Deno.env.get("PASSES");
 
+import { stringify } from "https://deno.land/std@0.176.0/encoding/csv.ts";
+
 //console.log(new Array(9).fill(0).map((x) => create(SCARDS_EPOCH)));
+
+const columns = {
+  passes: [
+    "reg_number",
+    "team_name",
+    "event_name",
+    "all_passes",
+    "contact_number",
+    "email_id",
+    "team_members",
+    "institution_name",
+    "degree_and_branch",
+    "agree_to_terms",
+    "reference_id",
+    "paid",
+  ],
+  teams: [
+    "reg_number",
+    "name",
+    "contact_number",
+    "email_id",
+    "institution_name",
+    "degree_and_branch",
+    "agree_to_terms",
+    "reference_id",
+    "paid",
+  ],
+};
 
 const AddZero = (s: string | number, n: number) =>
   s.toString().padStart(n, "0");
@@ -43,6 +74,9 @@ const setPaidPass = db.prepare(
 const setPaidReg = db.prepare(
   `UPDATE teams SET paid = ? WHERE reference_id = ?`,
 );
+
+const allPasses = db.prepare(`SELECT * FROM all_pass`);
+const allTeams = db.prepare(`SELECT * FROM teams`);
 
 const addTeam = db.prepare(
   `INSERT INTO teams (
@@ -229,7 +263,7 @@ router.post("/all_pass", async (ctx, _next) => {
       `Attempt at ${Date.now()} using ${JSON.stringify(data)} for PASS`,
     );
     const last: number =
-    getPassLength.get()?.["count(reference_id)"] as number || 0;
+      getPassLength.get()?.["count(reference_id)"] as number || 0;
     const ref_id = `${(10000 + last)}${formatCount()}`;
 
     addPass.run(
@@ -325,15 +359,25 @@ client.on("messageCreate", (message) => {
         message.channel.send({ embeds: [e] });
       }
     }
-  }
-  if (SET_COMMAND.exec(message.content)) {
+  } else if (SET_COMMAND.exec(message.content)) {
     const args = SET_COMMAND.exec(message.content);
     if (args) {
       const data = args[1].toLowerCase() === "p"
         ? setPaidPass.run(args[3], args[2].toLowerCase() === "paid" ? 1 : 0)
-        : setPaidReg.run(args[3], args[2].toLowerCase() === "paid" ? 1 : 0)
-      message.channel.send("Done")      
+        : setPaidReg.run(args[3], args[2].toLowerCase() === "paid" ? 1 : 0);
+      message.channel.send("Done");
     }
+  } else if (message.content.toLowerCase() === "dump all") {
+    const passes = allPasses.all();
+    const teams = allTeams.all();
+
+    const passString = stringify(passes, { columns: columns.passes });
+    const teamString = stringify(teams, { columns: columns.teams });
+
+    message.channel.send("Ok", {files: [
+      new MessageAttachment("all_pass.csv", new TextEncoder().encode(passString)),
+      new MessageAttachment("teams.csv", new TextEncoder().encode(teamString))
+    ]})
   }
 });
 
