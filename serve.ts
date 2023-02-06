@@ -9,7 +9,7 @@ import {
   Client,
   Embed,
   GatewayIntents,
-  MessageAttachment
+  MessageAttachment,
 } from "https://deno.land/x/harmony@v2.8.0/mod.ts";
 
 const SCARDS_EPOCH = 1667759400000;
@@ -158,8 +158,10 @@ router.post("/confirm_reg", async (ctx, _next) => {
     );
 
     if (data.all_passes) {
-      const passes = data.all_passes.split(";").map(x => x);
-      const members = data.team_members.split(";").map(x => x).map(x => x.toLowerCase());
+      const passes = data.all_passes.split(";").map((x) => x);
+      const members = data.team_members.split(";").map((x) => x).map((x) =>
+        x.toLowerCase()
+      );
 
       if (passes.length > members.length) {
         ctx.response.status = 200;
@@ -187,7 +189,7 @@ router.post("/confirm_reg", async (ctx, _next) => {
           return;
         }
       }
-/*
+      /*
       for (const row of getAllRegistrations.all(data.event_name)) {
         const usedPasses = ((row.all_passes || "") as string).split(";");
         if (usedPasses.some((x) => passes.includes(x))) {
@@ -199,8 +201,9 @@ router.post("/confirm_reg", async (ctx, _next) => {
           return;
         }
       }
+
+      */
     }
-*/
     const last: number =
       getTeamLength.get()?.["count(reference_id)"] as number || 0;
     const ref_id = `${(10000 + last)}${formatCount()}`;
@@ -374,10 +377,18 @@ client.on("messageCreate", (message) => {
     const passString = stringify(passes, { columns: columns.passes });
     const teamString = stringify(teams, { columns: columns.teams });
 
-    message.channel.send("Ok", {files: [
-      new MessageAttachment("all_pass.csv", new TextEncoder().encode(passString)),
-      new MessageAttachment("teams.csv", new TextEncoder().encode(teamString))
-    ]})
+    message.channel.send("Ok", {
+      files: [
+        new MessageAttachment(
+          "all_pass.csv",
+          new TextEncoder().encode(passString),
+        ),
+        new MessageAttachment(
+          "teams.csv",
+          new TextEncoder().encode(teamString),
+        ),
+      ],
+    });
   }
 });
 
