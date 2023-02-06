@@ -159,7 +159,7 @@ router.post("/confirm_reg", async (ctx, _next) => {
 
     if (data.all_passes) {
       const passes = data.all_passes.split(";");
-      const members = data.team_members.split(";");
+      const members = data.team_members.split(";").map(x => x.toLowerCase());
 
       if (passes.length > members.length) {
         ctx.response.status = 200;
@@ -171,14 +171,14 @@ router.post("/confirm_reg", async (ctx, _next) => {
       }
 
       for (const pass of passes) {
-        const name = verifyPass.get(pass);
+        const name = verifyPass.get(/(?:p-)?(\d+)/i.exec(pass)?.[0]);
         if (!name) {
           ctx.response.status = 200;
           ctx.response.body = {
             message: `Registration Unsuccessful! Pass ${pass} does not exist.`,
           };
           return;
-        } else if (!members.includes(name.name as string)) {
+        } else if (!members.includes((name.name as string).toLowerCase())) {
           ctx.response.status = 200;
           ctx.response.body = {
             message:
