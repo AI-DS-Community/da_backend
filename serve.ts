@@ -187,7 +187,7 @@ router.post("/confirm_reg", async (ctx, _next) => {
           return;
         }
       }
-
+/*
       for (const row of getAllRegistrations.all(data.event_name)) {
         const usedPasses = ((row.all_passes || "") as string).split(";");
         if (usedPasses.some((x) => passes.includes(x))) {
@@ -200,7 +200,7 @@ router.post("/confirm_reg", async (ctx, _next) => {
         }
       }
     }
-
+*/
     const last: number =
       getTeamLength.get()?.["count(reference_id)"] as number || 0;
     const ref_id = `${(10000 + last)}${formatCount()}`;
