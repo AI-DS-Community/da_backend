@@ -158,8 +158,8 @@ router.post("/confirm_reg", async (ctx, _next) => {
     );
 
     if (data.all_passes) {
-      const passes = data.all_passes.split(";");
-      const members = data.team_members.split(";").map(x => x.toLowerCase());
+      const passes = data.all_passes.split(";").map(x => x);
+      const members = data.team_members.split(";").map(x => x).map(x => x.toLowerCase());
 
       if (passes.length > members.length) {
         ctx.response.status = 200;
