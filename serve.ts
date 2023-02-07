@@ -374,8 +374,13 @@ client.on("messageCreate", (message) => {
     const passes = allPasses.all();
     const teams = allTeams.all();
 
-    const passString = stringify(passes.sort((a, b) => (a.event_name as string).localeCompare(b.event_name)), { columns: columns.passes });
-    const teamString = stringify(teams, { columns: columns.teams });
+    const passString = stringify(passes, { columns: columns.passes });
+    const teamString = stringify(
+      teams.sort((a, b) =>
+        (a.event_name as string).localeCompare(b.event_name)
+      ),
+      { columns: columns.teams },
+    );
 
     message.channel.send("Ok", {
       files: [
@@ -389,6 +394,25 @@ client.on("messageCreate", (message) => {
         ),
       ],
     });
+    const dat = teams.map((x) => x.event_name);
+    const files = dat.filter((x, i) => dat.indexOf(x) === i).map((x) =>
+      new MessageAttachment(
+        `${x}.csv`,
+        new TextEncoder().encode(
+          stringify(teams.filter((y) => y.event_name === x), {
+            columns: columns.teams,
+          }),
+        ),
+      )
+    );
+
+    let pointer = 0;
+    while (pointer < dat.length - 10) {
+      message.channel.send({
+        files: files.slice(pointer, pointer + 10),
+      });
+      pointer += 10;
+    }
   }
 });
 
