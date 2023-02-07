@@ -376,9 +376,7 @@ client.on("messageCreate", (message) => {
 
     const passString = stringify(passes, { columns: columns.passes });
     const teamString = stringify(
-      teams.sort((a, b) =>
-        (a.event_name as string).localeCompare(b.event_name)
-      ),
+      teams,
       { columns: columns.teams },
     );
 
