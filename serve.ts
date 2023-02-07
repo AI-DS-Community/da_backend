@@ -374,7 +374,7 @@ client.on("messageCreate", (message) => {
     const passes = allPasses.all();
     const teams = allTeams.all();
 
-    const passString = stringify(passes, { columns: columns.passes });
+    const passString = stringify(passes.sort((a, b) => (a.event_name as string).localeCompare(b.event_name)), { columns: columns.passes });
     const teamString = stringify(teams, { columns: columns.teams });
 
     message.channel.send("Ok", {
