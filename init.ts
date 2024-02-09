@@ -29,6 +29,7 @@ db.exec(
     degree_and_branch TEXT,
     agree_to_terms TEXT,
     reference_id TEXT,
+    events INTEGER DEFAULT 0,
     paid INTEGER DEFAULT 0
     )`,
 );

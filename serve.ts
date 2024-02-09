@@ -1,3 +1,4 @@
+import "https://deno.land/std@0.215.0/dotenv/load.ts";
 import { Application, Router } from "oak";
 import { oakCors } from "oakCors";
 
@@ -60,19 +61,15 @@ function formatCount(): string {
 
 const db = new Database("db.scards");
 
-const getTeamLength = db.prepare(
-  `SELECT count(reference_id) FROM teams`,
-);
+const getTeamLength = db.prepare(`SELECT count(reference_id) FROM teams`);
 
-const getPassLength = db.prepare(
-  `SELECT count(reference_id) FROM all_pass`,
-);
+const getPassLength = db.prepare(`SELECT count(reference_id) FROM all_pass`);
 
 const setPaidPass = db.prepare(
-  `UPDATE all_pass SET paid = ? WHERE reference_id = ?`,
+  `UPDATE all_pass SET paid = ? WHERE reference_id = ?`
 );
 const setPaidReg = db.prepare(
-  `UPDATE teams SET paid = ? WHERE reference_id = ?`,
+  `UPDATE teams SET paid = ? WHERE reference_id = ?`
 );
 
 const allPasses = db.prepare(`SELECT * FROM all_pass`);
@@ -90,7 +87,7 @@ const addTeam = db.prepare(
     degree_and_branch,
     agree_to_terms,
     reference_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 );
 
 const addPass = db.prepare(
@@ -102,7 +99,7 @@ const addPass = db.prepare(
     degree_and_branch,
     agree_to_terms,
     reference_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)`
 );
 
 const getTeamDetails = db.prepare(
@@ -117,7 +114,7 @@ const getTeamDetails = db.prepare(
     degree_and_branch,
     agree_to_terms,
     reference_id
-    FROM teams WHERE reference_id = ?`,
+    FROM teams WHERE reference_id = ?`
 );
 
 const getPassDetails = db.prepare(
@@ -129,13 +126,21 @@ const getPassDetails = db.prepare(
     degree_and_branch,
     agree_to_terms,
     reference_id
-     FROM all_pass WHERE reference_id = ?`,
+     FROM all_pass WHERE reference_id = ?`
 );
 
 const verifyPass = db.prepare(`SELECT name FROM all_pass WHERE reference_id=?`);
 
 const getAllRegistrations = db.prepare(
-  `SELECT * FROM teams WHERE event_name=?`,
+  `SELECT * FROM teams WHERE event_name=?`
+);
+
+const getPassUsage = db.prepare(
+  `SELECT events FROM all_pass WHERE reference_id = ?`
+);
+
+const addPassUsage = db.prepare(
+  `UPDATE all_pass SET events = events + 1 WHERE reference_id = ?`
 );
 
 const app = new Application();
@@ -154,20 +159,20 @@ router.post("/confirm_reg", async (ctx, _next) => {
     const data: Record<string, string> = await body.value;
 
     logger.info(
-      `Attempt at ${Date.now()} using ${JSON.stringify(data)} for REG`,
+      `Attempt at ${Date.now()} using ${JSON.stringify(data)} for REG`
     );
 
     if (data.all_passes) {
       const passes = data.all_passes.split(";").map((x) => x);
-      const members = data.team_members.split(";").map((x) => x).map((x) =>
-        x.toLowerCase()
-      );
+      const members = data.team_members
+        .split(";")
+        .map((x) => x)
+        .map((x) => x.toLowerCase());
 
       if (passes.length > members.length) {
         ctx.response.status = 200;
         ctx.response.body = {
-          message:
-            `Registration Unsuccessful! Passes do not match the team members listed.`,
+          message: `Registration Unsuccessful! Passes do not match the team members listed.`,
         };
         return;
       }
@@ -183,30 +188,42 @@ router.post("/confirm_reg", async (ctx, _next) => {
         } else if (!members.includes((name.name as string).toLowerCase())) {
           ctx.response.status = 200;
           ctx.response.body = {
-            message:
-              `Registration Unsuccessful! Pass ${pass} does not belong to any of the listed members.`,
+            message: `Registration Unsuccessful! Pass ${pass} does not belong to any of the listed members.`,
           };
           return;
         }
       }
-      /*
       for (const row of getAllRegistrations.all(data.event_name)) {
+        console.log(row)
         const usedPasses = ((row.all_passes || "") as string).split(";");
         if (usedPasses.some((x) => passes.includes(x))) {
           ctx.response.status = 200;
           ctx.response.body = {
-            message:
-              `Registration Unsuccessful! One of the passes has already been used for registering in this event.`,
+            message: `Registration Unsuccessful! One of the passes has already been used for registering in this event.`,
           };
           return;
         }
       }
-
-      */
+      for (const pass of passes) {
+        const count = getPassUsage.get(/(?:p-)?(\d+)/i.exec(pass)?.[0]);
+        if (!count) {
+          ctx.response.status = 200;
+          ctx.response.body = {
+            message: `Registration Unsuccessful! Pass ${pass} does not exist.`,
+          };
+          return;
+        } else if ((count.count as number) >= 3) {
+          ctx.response.status = 200;
+          ctx.response.body = {
+            message: `Registration Unsuccessful! Pass ${pass} has already been used three times.`,
+          };
+          return;
+        }
+      }
     }
     const last: number =
-      getTeamLength.get()?.["count(reference_id)"] as number || 0;
-    const ref_id = `${(10000 + last)}${formatCount()}`;
+      (getTeamLength.get()?.["count(reference_id)"] as number) || 0;
+    const ref_id = `${10000 + last}${formatCount()}`;
 
     addTeam.run(
       data.team_name,
@@ -218,8 +235,12 @@ router.post("/confirm_reg", async (ctx, _next) => {
       data.institution_name,
       data.degree_and_branch,
       data.agree_to_terms,
-      ref_id,
+      ref_id
     );
+    if (data.all_passes) {
+      const passes = data.all_passes.split(";").map((x) => x)
+      passes.forEach(pass => addPassUsage.run(pass))
+    }
 
     if (data) {
       const embed = new Embed().setColor("#c39232");
@@ -263,11 +284,11 @@ router.post("/all_pass", async (ctx, _next) => {
     const data: Record<string, string> = await body.value;
 
     logger.info(
-      `Attempt at ${Date.now()} using ${JSON.stringify(data)} for PASS`,
+      `Attempt at ${Date.now()} using ${JSON.stringify(data)} for PASS`
     );
     const last: number =
-      getPassLength.get()?.["count(reference_id)"] as number || 0;
-    const ref_id = `${(10000 + last)}${formatCount()}`;
+      (getPassLength.get()?.["count(reference_id)"] as number) || 0;
+    const ref_id = `${10000 + last}${formatCount()}`;
 
     addPass.run(
       data.name,
@@ -276,7 +297,7 @@ router.post("/all_pass", async (ctx, _next) => {
       data.institution_name,
       data.degree_and_branch,
       data.agree_to_terms,
-      ref_id,
+      ref_id
     );
 
     if (data) {
@@ -339,9 +360,10 @@ client.on("messageCreate", (message) => {
   if (GET_COMMAND.exec(message.content)) {
     const args = GET_COMMAND.exec(message.content);
     if (args) {
-      const data = args[1].toLowerCase() === "p"
-        ? getPassDetails.all(args[2])
-        : getTeamDetails.all(args[2]);
+      const data =
+        args[1].toLowerCase() === "p"
+          ? getPassDetails.all(args[2])
+          : getTeamDetails.all(args[2]);
 
       for (const row of data) {
         const e = new Embed().setColor("#c39232");
@@ -365,9 +387,10 @@ client.on("messageCreate", (message) => {
   } else if (SET_COMMAND.exec(message.content)) {
     const args = SET_COMMAND.exec(message.content);
     if (args) {
-      const data = args[1].toLowerCase() === "p"
-        ? setPaidPass.run(args[3], args[2].toLowerCase() === "paid" ? 1 : 0)
-        : setPaidReg.run(args[3], args[2].toLowerCase() === "paid" ? 1 : 0);
+      const data =
+        args[1].toLowerCase() === "p"
+          ? setPaidPass.run(args[3], args[2].toLowerCase() === "paid" ? 1 : 0)
+          : setPaidReg.run(args[3], args[2].toLowerCase() === "paid" ? 1 : 0);
       message.channel.send("Done");
     }
   } else if (message.content.toLowerCase() === "dump all") {
@@ -375,34 +398,37 @@ client.on("messageCreate", (message) => {
     const teams = allTeams.all();
 
     const passString = stringify(passes, { columns: columns.passes });
-    const teamString = stringify(
-      teams,
-      { columns: columns.teams },
-    );
+    const teamString = stringify(teams, { columns: columns.teams });
 
     message.channel.send("Ok", {
       files: [
         new MessageAttachment(
           "all_pass.csv",
-          new TextEncoder().encode(passString),
+          new TextEncoder().encode(passString)
         ),
         new MessageAttachment(
           "teams.csv",
-          new TextEncoder().encode(teamString),
+          new TextEncoder().encode(teamString)
         ),
       ],
     });
     const dat = teams.map((x) => x.event_name);
-    const files = dat.filter((x, i) => dat.indexOf(x) === i).map((x) =>
-      new MessageAttachment(
-        `${x}.csv`,
-        new TextEncoder().encode(
-          stringify(teams.filter((y) => y.event_name === x), {
-            columns: columns.teams,
-          }),
-        ),
-      )
-    );
+    const files = dat
+      .filter((x, i) => dat.indexOf(x) === i)
+      .map(
+        (x) =>
+          new MessageAttachment(
+            `${x}.csv`,
+            new TextEncoder().encode(
+              stringify(
+                teams.filter((y) => y.event_name === x),
+                {
+                  columns: columns.teams,
+                }
+              )
+            )
+          )
+      );
 
     let pointer = 0;
     while (pointer < dat.length - 10) {
