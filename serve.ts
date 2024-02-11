@@ -350,18 +350,16 @@ router.post("/all_pass_id", async (ctx, _next) => {
     if (pass) {
       const embed = new Embed().setColor("#c39232").setTitle("ALL PASS");
       let res = `\n**REF**: ${ref_id}`;
-      res += `\n**TEAM**: ${pass.team_name}`;
-      res += `\n**PASSES**: ${pass.all_passes}`;
-      res += `\n**MEMBERS**: ${pass.team_members}`;
-      res += `\n**EVENT**: ${pass.event_name}`;
+      res += `\n**NAME**: ${pass.name}`;
       res += `\n**CONTACT**: ${pass.contact_number}`;
       res += `\n**EMAIL**: ${pass.email_id}`;
       res += `\n**INSTITUTION**: ${pass.institution_name}`;
       res += `\n**DEGREE**: ${pass.degree_and_branch}`;
       res += `\n**AGREED TO TERMS**: ${pass.agree_to_terms}`;
+      res += `\n**TRANSACTION_ID**: ${data.transaction_id}`
       embed.setDescription(res);
       const embedbody = { embeds: [embed.toJSON()] };
-      fetch(String(HOOK_REG), {
+      fetch(String(HOOK_PASS), {
         method: "post",
         body: JSON.stringify(embedbody),
         headers: { "Content-Type": "application/json" },
@@ -400,15 +398,20 @@ router.post("/all_registration_id", async (ctx, _next) => {
     if (pass) {
       const embed = new Embed().setColor("#c39232").setTitle("ALL PASS");
       let res = `\n**REF**: ${ref_id}`;
-      res += `\n**NAME**: ${pass.name}`;
+      res += `\n**TEAM**: ${pass.team_name}`;
+      res += `\n**PASSES**: ${pass.all_passes}`;
+      res += `\n**MEMBERS**: ${pass.team_members}`;
+      res += `\n**EVENT**: ${pass.event_name}`;
       res += `\n**CONTACT**: ${pass.contact_number}`;
       res += `\n**EMAIL**: ${pass.email_id}`;
       res += `\n**INSTITUTION**: ${pass.institution_name}`;
       res += `\n**DEGREE**: ${pass.degree_and_branch}`;
       res += `\n**AGREED TO TERMS**: ${pass.agree_to_terms}`;
+      res += `\n**TRANSACTION_ID**: ${data.transaction_id}`
+
       embed.setDescription(res);
       const embedbody = { embeds: [embed.toJSON()] };
-      fetch(String(HOOK_PASS), {
+      fetch(String(HOOK_REG), {
         method: "post",
         body: JSON.stringify(embedbody),
         headers: { "Content-Type": "application/json" },
