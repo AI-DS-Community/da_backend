@@ -72,6 +72,14 @@ const setPaidReg = db.prepare(
   `UPDATE teams SET paid = ? WHERE reference_id = ?`
 );
 
+const setIdPass = db.prepare(
+  `UPDATE all_pass SET transaction_id = ? WHERE reference_id = ?`
+);
+const setIdReg = db.prepare(
+  `UPDATE teams SET transaction_id = ? WHERE reference_id = ?`
+);
+
+
 const allPasses = db.prepare(`SELECT * FROM all_pass`);
 const allTeams = db.prepare(`SELECT * FROM teams`);
 
@@ -130,6 +138,7 @@ const getPassDetails = db.prepare(
 );
 
 const verifyPass = db.prepare(`SELECT name FROM all_pass WHERE reference_id=?`);
+const verifyPaidPass = db.prepare(`SELECT name FROM all_pass WHERE reference_id=? AND transaction_id IS NOT NULL`);
 
 const getAllRegistrations = db.prepare(
   `SELECT * FROM teams WHERE event_name=?`
@@ -176,13 +185,20 @@ router.post("/confirm_reg", async (ctx, _next) => {
         };
         return;
       }
+      if(passes.filter((x, i) => passes.indexOf(x) !== i).length) {
+        ctx.response.status = 200;
+        ctx.response.body = {
+          message: `Registration Unsuccessful! Duplicate passes used.`,
+        };
+        return;
+      }
 
       for (const pass of passes) {
-        const name = verifyPass.get(/(?:p-)?(\d+)/i.exec(pass)?.[0]);
+        const name = verifyPaidPass.get(/(?:p-)?(\d+)/i.exec(pass)?.[0]);
         if (!name) {
           ctx.response.status = 200;
           ctx.response.body = {
-            message: `Registration Unsuccessful! Pass ${pass} does not exist.`,
+            message: `Registration Unsuccessful! Pass ${pass} does not exist. Or not paid.`,
           };
           return;
         } else if (!members.includes((name.name as string).toLowerCase())) {
@@ -223,7 +239,7 @@ router.post("/confirm_reg", async (ctx, _next) => {
     }
     const last: number =
       (getTeamLength.get()?.["count(reference_id)"] as number) || 0;
-    const ref_id = `${10000 + last}${formatCount()}`;
+    const ref_id = `${10000 + last}`;
 
     addTeam.run(
       data.team_name,
@@ -288,7 +304,7 @@ router.post("/all_pass", async (ctx, _next) => {
     );
     const last: number =
       (getPassLength.get()?.["count(reference_id)"] as number) || 0;
-    const ref_id = `${10000 + last}${formatCount()}`;
+    const ref_id = `${90000 + last}}`;
 
     addPass.run(
       data.name,
@@ -301,14 +317,95 @@ router.post("/all_pass", async (ctx, _next) => {
     );
 
     if (data) {
-      const embed = new Embed().setColor("#c39232");
+      ctx.response.status = 200;
+      ctx.response.body = {
+        message: "Reservation Success!",
+        unique_code: `${ref_id}`,
+      };
+    } else throw `Invalid body at ${Date.now()}`;
+  } catch (e) {
+    console.error(e);
+    logger.error(`${Date.now()} => ${e.toString()}`);
+    ctx.response.status = 500;
+    ctx.response.body = {
+      message: "An error occured.",
+    };
+  }
+});
+
+router.post("/all_pass_id", async (ctx, _next) => {
+  try {
+    const body = ctx.request.body({ type: "json" });
+
+    const data: Record<string, string> = await body.value;
+
+    logger.info(
+      `Attempt at ${Date.now()} using ${JSON.stringify(data)} for PASS ID`
+    );
+    const ref_id = data.ref_id;
+
+    setIdPass.run(data.transaction_id, ref_id)
+    const pass = getPassDetails.get(ref_id)
+
+    if (pass) {
+      const embed = new Embed().setColor("#c39232").setTitle("ALL PASS");
       let res = `\n**REF**: ${ref_id}`;
-      res += `\n**NAME**: ${data.name}`;
-      res += `\n**CONTACT**: ${data.contact_number}`;
-      res += `\n**EMAIL**: ${data.email_id}`;
-      res += `\n**INSTITUTION**: ${data.institution_name}`;
-      res += `\n**DEGREE**: ${data.degree_and_branch}`;
-      res += `\n**AGREED TO TERMS**: ${data.agree_to_terms}`;
+      res += `\n**TEAM**: ${pass.team_name}`;
+      res += `\n**PASSES**: ${pass.all_passes}`;
+      res += `\n**MEMBERS**: ${pass.team_members}`;
+      res += `\n**EVENT**: ${pass.event_name}`;
+      res += `\n**CONTACT**: ${pass.contact_number}`;
+      res += `\n**EMAIL**: ${pass.email_id}`;
+      res += `\n**INSTITUTION**: ${pass.institution_name}`;
+      res += `\n**DEGREE**: ${pass.degree_and_branch}`;
+      res += `\n**AGREED TO TERMS**: ${pass.agree_to_terms}`;
+      embed.setDescription(res);
+      const embedbody = { embeds: [embed.toJSON()] };
+      fetch(String(HOOK_REG), {
+        method: "post",
+        body: JSON.stringify(embedbody),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      ctx.response.status = 200;
+      ctx.response.body = {
+        message: "Reservation Success!",
+        unique_code: `${ref_id}`,
+      };
+    } else throw `Invalid body at ${Date.now()}`;
+  } catch (e) {
+    console.error(e);
+    logger.error(`${Date.now()} => ${e.toString()}`);
+    ctx.response.status = 500;
+    ctx.response.body = {
+      message: "An error occured.",
+    };
+  }
+});
+
+router.post("/all_registration_id", async (ctx, _next) => {
+  try {
+    const body = ctx.request.body({ type: "json" });
+
+    const data: Record<string, string> = await body.value;
+
+    logger.info(
+      `Attempt at ${Date.now()} using ${JSON.stringify(data)} for PASS ID`
+    );
+    const ref_id = data.ref_id;
+
+    setIdReg.run(data.transaction_id, ref_id)
+    const pass = getTeamDetails.get(ref_id)
+
+    if (pass) {
+      const embed = new Embed().setColor("#c39232").setTitle("ALL PASS");
+      let res = `\n**REF**: ${ref_id}`;
+      res += `\n**NAME**: ${pass.name}`;
+      res += `\n**CONTACT**: ${pass.contact_number}`;
+      res += `\n**EMAIL**: ${pass.email_id}`;
+      res += `\n**INSTITUTION**: ${pass.institution_name}`;
+      res += `\n**DEGREE**: ${pass.degree_and_branch}`;
+      res += `\n**AGREED TO TERMS**: ${pass.agree_to_terms}`;
       embed.setDescription(res);
       const embedbody = { embeds: [embed.toJSON()] };
       fetch(String(HOOK_PASS), {

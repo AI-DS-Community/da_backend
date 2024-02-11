@@ -15,6 +15,7 @@ db.exec(
     degree_and_branch TEXT,
     agree_to_terms TEXT,
     reference_id TEXT,
+    transaction_id TEXT,
     paid INTEGER DEFAULT 0
     )`,
 );
@@ -30,6 +31,7 @@ db.exec(
     agree_to_terms TEXT,
     reference_id TEXT,
     events INTEGER DEFAULT 0,
+    transaction_id TEXT,
     paid INTEGER DEFAULT 0
     )`,
 );
