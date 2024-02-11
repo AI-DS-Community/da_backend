@@ -304,7 +304,7 @@ router.post("/all_pass", async (ctx, _next) => {
     );
     const last: number =
       (getPassLength.get()?.["count(reference_id)"] as number) || 0;
-    const ref_id = `${90000 + last}}`;
+    const ref_id = `${90000 + last}`;
 
     addPass.run(
       data.name,
