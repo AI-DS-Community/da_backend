@@ -35,6 +35,7 @@ const columns = {
     "agree_to_terms",
     "reference_id",
     "paid",
+    "transaction_id",
   ],
   passes: [
     "reg_number",
@@ -46,6 +47,7 @@ const columns = {
     "agree_to_terms",
     "reference_id",
     "paid",
+    "transaction_id",
   ],
 };
 
