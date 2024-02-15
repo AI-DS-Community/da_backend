@@ -574,7 +574,7 @@ client.on("messageCreate", (message) => {
             `${x}.csv`,
             new TextEncoder().encode(
               stringify(
-                teams.filter((y) => y.event_name === x),
+                teams.filter(x => x.transaction_id).filter((y) => y.event_name === x),
                 {
                   columns: columns.teams,
                 }
