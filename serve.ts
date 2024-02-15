@@ -81,7 +81,6 @@ const setIdReg = db.prepare(
   `UPDATE teams SET transaction_id = ? WHERE reference_id = ?`
 );
 
-
 const allPasses = db.prepare(`SELECT * FROM all_pass`);
 const allTeams = db.prepare(`SELECT * FROM teams`);
 
@@ -140,7 +139,9 @@ const getPassDetails = db.prepare(
 );
 
 const verifyPass = db.prepare(`SELECT name FROM all_pass WHERE reference_id=?`);
-const verifyPaidPass = db.prepare(`SELECT name FROM all_pass WHERE reference_id=? AND transaction_id IS NOT NULL`);
+const verifyPaidPass = db.prepare(
+  `SELECT name FROM all_pass WHERE reference_id=? AND transaction_id IS NOT NULL`
+);
 
 const getAllRegistrations = db.prepare(
   `SELECT * FROM teams WHERE event_name=?`
@@ -187,7 +188,7 @@ router.post("/confirm_reg", async (ctx, _next) => {
         };
         return;
       }
-      if(passes.filter((x, i) => passes.indexOf(x) !== i).length) {
+      if (passes.filter((x, i) => passes.indexOf(x) !== i).length) {
         ctx.response.status = 200;
         ctx.response.body = {
           message: `Registration Unsuccessful! Duplicate passes used.`,
@@ -212,7 +213,7 @@ router.post("/confirm_reg", async (ctx, _next) => {
         }
       }
       for (const row of getAllRegistrations.all(data.event_name)) {
-        console.log(row)
+        console.log(row);
         const usedPasses = ((row.all_passes || "") as string).split(";");
         if (usedPasses.some((x) => passes.includes(x))) {
           ctx.response.status = 200;
@@ -256,8 +257,8 @@ router.post("/confirm_reg", async (ctx, _next) => {
       ref_id
     );
     if (data.all_passes) {
-      const passes = data.all_passes.split(";").map((x) => x)
-      passes.forEach(pass => addPassUsage.run(pass))
+      const passes = data.all_passes.split(";").map((x) => x);
+      passes.forEach((pass) => addPassUsage.run(pass));
     }
 
     if (data) {
@@ -346,8 +347,8 @@ router.post("/all_pass_id", async (ctx, _next) => {
     );
     const ref_id = data.ref_id;
 
-    setIdPass.run(data.transaction_id, ref_id)
-    const pass = getPassDetails.get(ref_id)
+    setIdPass.run(data.transaction_id, ref_id);
+    const pass = getPassDetails.get(ref_id);
 
     if (pass) {
       const embed = new Embed().setColor("#c39232").setTitle("ALL PASS");
@@ -358,7 +359,7 @@ router.post("/all_pass_id", async (ctx, _next) => {
       res += `\n**INSTITUTION**: ${pass.institution_name}`;
       res += `\n**DEGREE**: ${pass.degree_and_branch}`;
       res += `\n**AGREED TO TERMS**: ${pass.agree_to_terms}`;
-      res += `\n**TRANSACTION_ID**: ${data.transaction_id}`
+      res += `\n**TRANSACTION_ID**: ${data.transaction_id}`;
       embed.setDescription(res);
       const embedbody = { embeds: [embed.toJSON()] };
       fetch(String(HOOK_PASS), {
@@ -394,8 +395,8 @@ router.post("/all_registration_id", async (ctx, _next) => {
     );
     const ref_id = data.ref_id;
 
-    setIdReg.run(data.transaction_id, ref_id)
-    const pass = getTeamDetails.get(ref_id)
+    setIdReg.run(data.transaction_id, ref_id);
+    const pass = getTeamDetails.get(ref_id);
 
     if (pass) {
       const embed = new Embed().setColor("#c39232").setTitle("ALL PASS");
@@ -409,7 +410,7 @@ router.post("/all_registration_id", async (ctx, _next) => {
       res += `\n**INSTITUTION**: ${pass.institution_name}`;
       res += `\n**DEGREE**: ${pass.degree_and_branch}`;
       res += `\n**AGREED TO TERMS**: ${pass.agree_to_terms}`;
-      res += `\n**TRANSACTION_ID**: ${data.transaction_id}`
+      res += `\n**TRANSACTION_ID**: ${data.transaction_id}`;
 
       embed.setDescription(res);
       const embedbody = { embeds: [embed.toJSON()] };
@@ -455,7 +456,7 @@ const client = new Client({
 
 const GET_COMMAND = /^get\s(P|R)-(\d+)/i;
 
-const SET_COMMAND = /^set\s(P|R)-(\d+)\s(paid|unpaid)/i;
+const SET_COMMAND = /^set\s(P|R)-(\d+)\s(\d+|unpaid)/i;
 
 client.on("messageCreate", (message) => {
   if (message.channelID !== "1069859960428707954") return;
@@ -491,8 +492,14 @@ client.on("messageCreate", (message) => {
     if (args) {
       const data =
         args[1].toLowerCase() === "p"
-          ? setPaidPass.run(args[3], args[2].toLowerCase() === "paid" ? 1 : 0)
-          : setPaidReg.run(args[3], args[2].toLowerCase() === "paid" ? 1 : 0);
+          ? setIdPass.run(
+              args[3],
+              args[2].toLowerCase() === "upaid" ? null : args[2]
+            )
+          : setPaidReg.run(
+              args[3],
+              args[2].toLowerCase() === "upaid" ? null : args[2]
+            );
       message.channel.send("Done");
     }
   } else if (message.content.toLowerCase() === "dump all") {
@@ -501,6 +508,50 @@ client.on("messageCreate", (message) => {
 
     const passString = stringify(passes, { columns: columns.passes });
     const teamString = stringify(teams, { columns: columns.teams });
+
+    message.channel.send("Ok", {
+      files: [
+        new MessageAttachment(
+          "all_pass.csv",
+          new TextEncoder().encode(passString)
+        ),
+        new MessageAttachment(
+          "teams.csv",
+          new TextEncoder().encode(teamString)
+        ),
+      ],
+    });
+    const dat = teams.map((x) => x.event_name);
+    const files = dat
+      .filter((x, i) => dat.indexOf(x) === i)
+      .map(
+        (x) =>
+          new MessageAttachment(
+            `${x}.csv`,
+            new TextEncoder().encode(
+              stringify(
+                teams.filter((y) => y.event_name === x),
+                {
+                  columns: columns.teams,
+                }
+              )
+            )
+          )
+      );
+
+    let pointer = 0;
+    while (pointer < dat.length - 10) {
+      message.channel.send({
+        files: files.slice(pointer, pointer + 10),
+      });
+      pointer += 10;
+    }
+  } else if (message.content.toLowerCase() === "dump all paid") {
+    const passes = allPasses.all();
+    const teams = allTeams.all();
+
+    const passString = stringify(passes.filter(x => x.transaction_id), { columns: columns.passes });
+    const teamString = stringify(teams.filter(x => x.transaction_id), { columns: columns.teams });
 
     message.channel.send("Ok", {
       files: [
