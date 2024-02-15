@@ -489,6 +489,7 @@ client.on("messageCreate", (message) => {
     }
   } else if (SET_COMMAND.exec(message.content)) {
     const args = SET_COMMAND.exec(message.content);
+    console.log(args)
     if (args) {
       const data =
         args[1].toLowerCase() === "p"
