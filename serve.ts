@@ -197,7 +197,8 @@ router.post("/confirm_reg", async (ctx, _next) => {
       }
 
       for (const pass of passes) {
-        const name = verifyPaidPass.get(/(?:p-)?(\d+)/i.exec(pass)?.[0]);
+        console.error("TRYING PASS", pass)
+        const name = verifyPaidPass.get(/(?:p-)?(\d+)/i.exec(pass)?.[0] || "000");
         if (!name) {
           ctx.response.status = 200;
           ctx.response.body = {
